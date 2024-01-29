@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Функция получения имени пользователя
+get_name() {
+    name=$(whoami)
+    echo $name
+}
+
+# Функция приветствия пользователя
+hello_user() {
+    user=$(get_name)
+    echo "Hello $user!"
+}
+
+hello_user

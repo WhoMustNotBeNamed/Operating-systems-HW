@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Запрос числа от пользователя
+echo "Enter a number between 1 and 10:"
+read num
+
+# Проверка на корректный ввод
+if [ $num -ge 1 -a $num -le 10 ]; then
+    count=1
+
+    # Вывод строки нужное количество раз
+    while [ $count -le $num ]; do
+        echo "Hello, World!"
+        ((count++))
+    done
+else
+    echo "Invalid input. Please enter a number between 1 and 10."
+fi

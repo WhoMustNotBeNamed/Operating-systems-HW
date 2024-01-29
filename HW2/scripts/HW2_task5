@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# Функция сложения
+add() {
+    result=$(( $1 + $2 ))
+    echo $result
+}
+
+# Функция вычитания
+subtract() {
+    result=$(( $1 - $2 ))
+    echo $result
+}
+
+# Функция умножения
+multiply() {
+    result=$(( $1 * $2 ))
+    echo $result
+}
+
+# Функция деления
+divide() {
+    if [ $2 -eq 0 ]; then
+        echo "Error: Division by zero!"
+    else
+        # какая-то очень приятная функция найденая в инете, 
+        # которая делит числа с 2 знаками после запятой (еще были примеры с sed)
+        result=$(awk "BEGIN {printf \"%.2f\", $1 / $2}")
+        echo $result 
+    fi
+}
+
+# Функция калькулятора
+calculator() {
+    echo "Enter the first number:"
+    read num1
+
+    echo "Enter the operation (+, -, *, /):"
+    read operation
+
+    echo "Enter the second number:"
+    read num2
+
+    case $operation in
+        "+") result=$(add $num1 $num2);;
+        "-") result=$(subtract $num1 $num2);;
+        "*") result=$(multiply $num1 $num2);;
+        "/") result=$(divide $num1 $num2);;
+        *) echo "Invalid operation!"; exit 1;;
+    esac
+
+    echo "Result: $result"
+}
+
+# Вызываем функцию калькулятора
+calculator
