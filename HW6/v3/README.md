@@ -1,7 +1,7 @@
-# Вариант общего завершения клиента и сервера №1
+# Вариант общего завершения клиента и сервера №3
 
 ### _Решение:_ 
-Первый вариант завершения основан на передаче сигнала завершения от одного процесса другому. Для этого мы сохраняем PID процессов перед началом работы и потом передаем им нужный сигнал. Для завершения работы используйте `Ctrl+C`. Решение лежит в папке `scripts`.
+Третий вариант завершения достаточно ленивый, он основан на том, что при получении сигнала завершения программа устанавливает в сегмент памяти значение выходящее за пределы диапазона генерации случайных чисел, а другая программа после чтения этого значения тоже завершает свою работу. Для завершения работы используйте `Ctrl+C`. Решение лежит в папке `scripts`.
 
 ``` c
 // shmem-gen.c
@@ -15,23 +15,18 @@
 
 int shm_id;
 int *share;
-int out_pid; 
+
 
 // Метод завершения, который вызывается после получения сигнала о завершении
 void cleanup(int signum) {
-    if (signum == SIGINT ) {
-        kill(out_pid, SIGINT); 
-    }
-    shmdt(share);
-    shmctl(shm_id, IPC_RMID, NULL);
-    exit(0);
+  *share = 1111; //Устанавоиваем значение, которое будет являться сигналом для завершения
+  sleep(1);
+  shmdt(share);
+  shmctl(shm_id, IPC_RMID, NULL);
+  exit(0);
 }
 
 int main(){
-    printf("Gen PID: %d\n", getpid());
-    printf("Input out PID: ");
-    scanf("%d", &out_pid);  // Получить PID out от пользователя
-
   int num;
 
   signal(SIGINT, cleanup); // Обработка сигнала
@@ -56,6 +51,13 @@ int main(){
     *share = num;
     printf("write a random number %d\n", num);
     sleep(1);
+
+    // Если переменная равно 1111, завершаем работу
+    if (*share == 1111) {
+      shmdt(share);
+      shmctl(shm_id, IPC_RMID, NULL);
+      exit(0);
+    }
   }
   return 0;
 }
@@ -72,24 +74,17 @@ int main(){
 
 int shm_id;
 int *share;
-int gen_pid;
 
 // Метод обработки сигнала завершения
 void cleanup(int signum) {
-    if (signum == SIGINT ) {
-        kill(gen_pid, SIGINT); // Передача сигнала другому процессу
-    }
-
-    shmdt(share);
-    shmctl(shm_id, IPC_RMID, NULL);
-    exit(0);
+  *share = 1111; //Устанавоиваем значение, которое будет являться сигналом для завершения
+  sleep(1);
+  shmdt(share);
+  shmctl(shm_id, IPC_RMID, NULL);
+  exit(0);
 }
 
 int main() {
-    printf("Out PID: %d\n", getpid());
-    printf("Input gen PID: ");
-    scanf("%d", &gen_pid);  // Получить PID gen от пользователя
-
   signal(SIGINT, cleanup); // Обработка сигнала завершения
 
   shm_id = shmget (0x2FF, getpagesize(), 0666 | IPC_CREAT);
@@ -107,6 +102,13 @@ int main() {
   while(1){
     sleep(1);
     printf("%d\n", *share);
+
+    // Если переменная равно 1111, завершаем работу
+    if (*share == 1111) {
+      shmdt(share);
+      shmctl(shm_id, IPC_RMID, NULL);
+      exit(0);
+    }
   }
 
   return 0;
