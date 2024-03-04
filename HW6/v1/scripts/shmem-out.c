@@ -10,9 +10,10 @@ int shm_id;
 int *share;
 int gen_pid;
 
+// Метод обработки сигнала завершения
 void cleanup(int signum) {
     if (signum == SIGINT ) {
-        kill(gen_pid, SIGINT); 
+        kill(gen_pid, SIGINT); // Передача сигнала другому процессу
     }
 
     shmdt(share);
@@ -25,7 +26,7 @@ int main() {
     printf("Input gen PID: ");
     scanf("%d", &gen_pid);  // Получить PID gen от пользователя
 
-  signal(SIGINT, cleanup);
+  signal(SIGINT, cleanup); // Обработка сигнала завершения
 
   shm_id = shmget (0x2FF, getpagesize(), 0666 | IPC_CREAT);
   if(shm_id == -1){

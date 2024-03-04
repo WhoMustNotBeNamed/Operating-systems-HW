@@ -11,6 +11,7 @@ int shm_id;
 int *share;
 int out_pid; 
 
+// Метод завершения, который вызывается после получения сигнала о завершении
 void cleanup(int signum) {
     if (signum == SIGINT ) {
         kill(out_pid, SIGINT); 
@@ -27,7 +28,7 @@ int main(){
 
   int num;
 
-  signal(SIGINT, cleanup);
+  signal(SIGINT, cleanup); // Обработка сигнала
 
   srand(time(NULL));
   shm_id = shmget (0x2FF, getpagesize(), 0666 | IPC_CREAT);
