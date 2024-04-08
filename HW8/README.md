@@ -36,13 +36,18 @@ while (1) {
 
     // Запись в текущую ячейку и переход к следующей по кольцу
     buffer->store[write_index] = rand() % 11; // число от 0 до 10
-    write_index = (write_index + 1) % BUF_SIZE; // Переход к следующей ячейке
 
     //количество занятых ячеек увеличилось на единицу
     if(sem_post(full) == -1) {
         perror("sem_post: Incorrect post of full semaphore");
         exit(-1);
     };
+
+    pid_t pid = getpid();
+    printf("Producer %d writes value = %d to cell [%d]\n",
+           pid, buffer->store[write_index], write_index);
+
+    write_index = (write_index + 1) % BUF_SIZE; // Переход к следующей ячейке
 
     // Выход из критической секции
     if(sem_post(mutex) == -1) {

@@ -12,6 +12,9 @@ sem_t *writer;   // указатель на семафор пропуска пи
 const char *first_writer_sem_name = "/first_writer-semaphore";
 sem_t *first_writer;   // указатель на семафор допуска
 
+// Переменная для отслеживания текущей ячейки для записи
+static int write_index = 0;
+
 // Функция, осуществляющая обработку сигнала прерывания работы
 // Осществляет удаление всех семафоров и памяти. Заодно "убивает" читателя
 // независимо от его текущего состояния
@@ -155,41 +158,42 @@ int main() {
   // printf("before while checkout\n");
 
   // Алгоритм писателя
+  // Алгоритм писателя
   while (1) {
     // Проверка заполнения буфера (ждать если полон)
     if(sem_wait(empty) == -1) { //защита операции записи
-      perror("sem_wait: Incorrect wait of empty semaphore");
-      exit(-1);
+        perror("sem_wait: Incorrect wait of empty semaphore");
+        exit(-1);
     };
+
     //критическая секция, конкуренция с читателем
     if(sem_wait(mutex) == -1) {
-      perror("sem_wait: Incorrect wait of mutex");
-      exit(-1);
+        perror("sem_wait: Incorrect wait of mutex");
+        exit(-1);
     };
-    // Поиск первой свободной ячейки для записи. Она должна быть. Иначе сюда не попасть
-    int i = 0;
-    while(buffer->store[i] != -1) {
-            printf("    --> checking store: store[%d] = %d\n", i, buffer->store[i]);
-            ++i;
-    }
-    // Запись в первую свободную ячейку
-    buffer->store[i] = rand() % 11; // число от 0 до 10
+
+    // Запись в текущую ячейку и переход к следующей по кольцу
+    buffer->store[write_index] = rand() % 11; // число от 0 до 10
+
     //количество занятых ячеек увеличилось на единицу
     if(sem_post(full) == -1) {
-      perror("sem_post: Incorrect post of full semaphore");
-      exit(-1);
+        perror("sem_post: Incorrect post of full semaphore");
+        exit(-1);
     };
-    // Вывод информации об операции записи
+
     pid_t pid = getpid();
     printf("Producer %d writes value = %d to cell [%d]\n",
-           pid, buffer->store[i], i);
-           // pid, data, buffer->tail - 1 < 0 ? BUF_SIZE - 1: buffer->tail - 1 ;
+           pid, buffer->store[write_index], write_index);
+
+    write_index = (write_index + 1) % BUF_SIZE; // Переход к следующей ячейке
+
     // Выход из критической секции
     if(sem_post(mutex) == -1) {
-      perror("sem_post: Incorrect post of mutex semaphore");
-      exit(-1);
+        perror("sem_post: Incorrect post of mutex semaphore");
+        exit(-1);
     };
-    sleep(rand() % 3 + 1);
+
+    sleep(rand() % 3 + 1); // Задержка перед следующей записью
   }
   return 0;
 }

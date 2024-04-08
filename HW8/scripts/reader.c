@@ -7,6 +7,9 @@
 const char *reader_sem_name = "/reader-semaphore";
 sem_t *reader;   // указатель на семафор пропуска читателей
 
+// Переменная для отслеживания текущей ячейки для чтения
+static int read_index = 0;
+
 void sigfunc(int sig) {
   if(sig != SIGINT && sig != SIGTERM) {
     return;
@@ -117,43 +120,41 @@ int main() {
   // сохранение pid для корректного взаимодействия с писателем
   buffer->reader_pid = getpid();
 
-  // Алгоритм читателя
   while (1) {
-    sleep(rand() % 3 +1);
+    sleep(rand() % 3 +1); // Задержка перед чтением
+
     // Контроль наличия элементов в буфере
     if(sem_wait(full) == -1) {
-      perror("sem_wait: Incorrect wait of full semaphore");
-      exit(-1);
+        perror("sem_wait: Incorrect wait of full semaphore");
+        exit(-1);
     };
+
     //критическая секция
     if(sem_wait(mutex) == -1) {
-      perror("sem_wait: Incorrect wait of busy semaphore");
-      exit(-1);
+        perror("sem_wait: Incorrect wait of busy semaphore");
+        exit(-1);
     };
-    // Поиск первой занятой ячейки для записи. Она должна быть. Иначе сюда не попасть
-    int i = 0;
-    while(buffer->store[i] == -1) {
-      printf("    --> checking store: store[%d] = %d\n", i, buffer->store[i]);
-      ++i;
-    }
-    // Получение значения из читаемой ячейки
-    int result = buffer->store[i];
-    buffer->store[i] = -1;  // данные прочитаны
-    // вычисление факториала
-    int f = factorial(result);
+
+    // Чтение из текущей ячейки и переход к следующей по кольцу
+    int result = buffer->store[read_index];
+    buffer->store[read_index] = -1; // Помечаем ячейку как пустую
+    read_index = (read_index + 1) % BUF_SIZE; // Переход к следующей ячейке
+
     //количество свободных ячеек увеличилось на единицу
     if(sem_post(empty) == -1) {
-      perror("sem_post: Incorrect post of free semaphore");
-      exit(-1);
+        perror("sem_post: Incorrect post of free semaphore");
+        exit(-1);
     };
+
     // Вывод информации об операции чтения
     pid_t pid = getpid();
-    printf("Consumer %d: Reads value = %d from cell [%d], factorial = %d\n",
-           pid, result, i, f) ;
+    printf("Consumer %d: Reads value = %d from cell [%d]\n",
+           pid, result, read_index - 1);
+
     // Выход из критической секции
     if(sem_post(mutex) == -1) {
-      perror("sem_post: Incorrect post of mutex semaphore");
-      exit(-1);
+        perror("sem_post: Incorrect post of mutex semaphore");
+        exit(-1);
     };
   }
 }
