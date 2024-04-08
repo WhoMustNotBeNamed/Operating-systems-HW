@@ -100,4 +100,4 @@ while (1) {
 ```
 
 ## _Пример работы:_
-![alt text](screenshots/image.png)
+![alt text](screenshots/image1.png)
