@@ -105,4 +105,4 @@ while (1) {
 ```
 
 ## _Пример работы:_
-![alt text](screenshots/image1.png)
+![alt text](screenshots/image2.png)
